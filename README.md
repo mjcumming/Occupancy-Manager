@@ -1,5 +1,7 @@
 Occupancy Manager
 
+OpenHAB Community thread https://community.openhab.org/t/occupany-management-how-i-do-it/67961
+
 Introduction
 
 Occupancy Manager simplifies home automation tasks. Controlling the automated home is often based on knowning whether an area of the home is occuppied. Based on the state of an area (vacant or occupied) lights, HVAC, and media devices can be turned on or off.
@@ -24,15 +26,21 @@ OccuppiedActions = action to take when an area becomes occuppied. Current allowe
 
 Area Examples:
 
+```
 Group gMF_Bathroom "Bathroom" <bath> (gIN_MainFloor) ["Area"] {OccupancySettings = "" [ Time = 15, VacantActions = "LightsOff,ExhaustFansOff" ]}
+```
 
 In this example, the area represents a bathroom. The area is a space in the gIN_MainFloor area. When the area becomes occuppied, the occupancy time is set to 15 minutes. This means that if there are no other events in that area (ie light switch changes) the area will become vacant in 15 minutes. When the area becomes vacant, the VacantActions are executed, which in this case means to turn the lights and exhaust fans (more later on how to set this up)
 
+```
 Group gIN_MainFloor "First Floor" <groundfloor> (gHM_Interior) ["Area"] {OccupancySettings = "" [ Time = 120, VacantActions = "LightsOff" ]}
+```
 
 In this example, the area represents the main floor of the home. The area is occuppied for 120 minutes when there is any event in that area or when any child areas (the bathroom above) change occupancy state.
 
+```
 Group gEX_Garage "Garage" <none> (gHM_Exterior) ["Area"] {OccupancySettings = "" [ Time = 10, OccupiedActions = "SceneOnIfDark", VacantActions = "SceneOff" ]}
+```
 
 In this example, the garage, when it becomes occupied, the lights are turned on if it is dark outside. When the area becomes vacant, all the lights are turned off
 

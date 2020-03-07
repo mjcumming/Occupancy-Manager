@@ -81,3 +81,28 @@ Occupancy Control item events
 LOCK = Area occupancy status is set to locked, no events will change the area occupied status until unlocked
 UNLOCK = Area is unlocked, occpuancy events will change status
 CLEARLOCKS = Remove all locks
+
+
+INSTALLATION
+
+Place these files in the automation/lib/python/personal folder
+
+Also install the Item Metadata repository files
+
+Create a script in the automation/jsr232/python/personal folder called start_occupancy_manager.py 
+
+import traceback
+
+from org.slf4j import Logger, LoggerFactory  
+log = LoggerFactory.getLogger("org.eclipse.smarthome.model.script.Rules") 
+
+# start the occupancy manager  
+try:
+    import personal.occupancy.occupancy_manager
+    reload (personal.occupancy.occupancy_manager) 
+    import personal.occupancy.occupancy_manager 
+
+except:
+    log.error (traceback.format_exc())
+
+           

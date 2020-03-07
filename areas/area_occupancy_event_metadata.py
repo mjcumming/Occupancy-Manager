@@ -7,9 +7,9 @@ Interface to an Area item metadata
 '''
  
 
-import personal.metadata_item_namespace
-reload (personal.metadata_item_namespace) 
-from personal.metadata_item_namespace import Metadata_Item_Namespace
+import personal.item_metadata.metadata_item_namespace
+reload (personal.item_metadata.metadata_item_namespace) 
+from personal.item_metadata.metadata_item_namespace import Metadata_Item_Namespace
 
 
 class Area_Occupancy_Event_Metadata(Metadata_Item_Namespace):

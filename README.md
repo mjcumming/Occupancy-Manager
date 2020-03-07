@@ -87,10 +87,11 @@ INSTALLATION
 
 Place these files in the automation/lib/python/personal folder
 
-Also install the Item Metadata repository files
+Also install the Item Metadata repository files https://github.com/mjcumming/Item-Metadata
 
 Create a script in the automation/jsr232/python/personal folder called start_occupancy_manager.py 
-'''
+
+```
 import traceback
 
 from org.slf4j import Logger, LoggerFactory  
@@ -104,5 +105,6 @@ try:
 
 except:
     log.error (traceback.format_exc())
-'''
+```
+
            

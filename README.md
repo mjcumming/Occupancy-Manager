@@ -48,7 +48,7 @@ light switch changes or any other event that we track) the area will become vaca
 executed, which in this case means to turn off the lights and exhaust fans (more later how to set this up)
 
 ```
-Group gIN_MainFloor "First Floor" (gHM_Interior) ["Area"] {OccupancySettings = "" [ Time = 120, VacantActions = "LightsOff" ]}
+Group gIN_MainFloor "First Floor" (gHM_Interior) {OccupancySettings = "" [ Time = 120, VacantActions = "LightsOff" ]}
 ```
 
 In this example, the area represents the main floor of the home. This area is child area of the gHM_Interior area. The area is occupied for 120 minutes when
@@ -56,7 +56,7 @@ there is any event in that area or any child areas (i.e. the bathroom above) cha
 manager to turn off any lights in the gIN_MainFloor group with the item tag [“Lighting”].
 
 ```
-Group gEX_Garage "Garage" (gHM_Exterior) ["Area"] {OccupancySettings = "" [ Time= 10, OccupiedActions = "SceneOnIfDark", VacantActions = "SceneOff" ]}
+Group gEX_Garage "Garage" (gHM_Exterior)  {OccupancySettings = "" [ Time= 10, OccupiedActions = "SceneOnIfDark", VacantActions = "SceneOff" ]}
 ```
 
 In this example, the garage, when it becomes occupied, the lights are turned on if it is dark outside. When the area becomes vacant, all the lights are turned off.

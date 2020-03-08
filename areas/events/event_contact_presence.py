@@ -11,11 +11,11 @@ from org.slf4j import Logger, LoggerFactory
 
 log = LoggerFactory.getLogger("org.eclipse.smarthome.model.script.Rules")
 
-import area_item_event
-reload (area_item_event)
-from area_item_event import Event_Base
+import personal.occupancy.areas.events.event_base
+reload (personal.occupancy.areas.events.event_base)
+from personal.occupancy.areas.events.event_base import Event_Base
 
-class Event_Base_Contact_Presence (Event_Base):
+class Event_Contact_Presence (Event_Base):
 
     def process_changed_event(self,event):  
 

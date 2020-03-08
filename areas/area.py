@@ -156,8 +156,8 @@ class Area:
             self.occupancy_timeout = None
 
     def get_parent_area_group(self): # finds a parent area for areas list if there is one
-        names = list (group_name for group_name in self.item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
-
+        #names = list (group_name for group_name in self.item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
+        names = list (group_name for group_name in self.item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)) is not None)
         if not names: # no matching area for item
             return None
 
@@ -171,8 +171,10 @@ class Area:
     def get_child_area_group_items(self):
         child_groups = []
         for child_item in self.item.members:
-            if "Area" in child_item.getTags():
+            #if "Area" in child_item.getTags():
+            if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
                 child_groups.append(child_item)
+
         return child_groups
 
     def is_locked(self): # returns true if area is locked
@@ -272,7 +274,8 @@ class Area:
 
             # when area is vacant, force child areas to vacant
             for child_item in self.item.members:
-                if "Area" in child_item.getTags():
+                #if "Area" in child_item.getTags():
+                if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
                     area = self.area_list [child_item.name]
                     log.info ("Propagating occupancy state to child area {}".format(child_item.name))
                     area.set_area_vacant ('Parent Vacant')

@@ -17,6 +17,7 @@ from core.triggers import when
 from core.rules import rule
 from core import osgi 
 from core import items   
+from core.jsr223.scope import NULL
 
 
 
@@ -54,8 +55,8 @@ gOccupancyItem group contains any items that generate events that might change t
 def gOccupancyItemChanged (event):
     log.warn ('Occupancy item changed {} {}'.format(event,event.oldItemState))
 
-    #if event.oldItemState == UnDefType.NULL: # avoid events from persistance
-    #    return
+    if event.oldItemState == NULL: # avoid events from persistance
+        return
 
     am.process_item_changed_event (event)
 
@@ -72,8 +73,8 @@ Propagates state to parent and/or child areas
 
 def gOccupancyStateChanged (event):
  
-    #if event.oldItemState == UnDefType.NULL: # avoid events from persistance
-    #    return 
+    if event.oldItemState == NULL: # avoid events from persistance
+        return 
     
     am.process_occupancy_state_changed_event (event) 
      
@@ -97,8 +98,8 @@ def gOccupancyStateReceivedCommand (event):
 
 def gOccupancyLockingChanged (event):
 
-    #if event.oldItemState == UnDefType.NULL: # avoid events from persistance
-    #    return 
+    if event.oldItemState == NULL: # avoid events from persistance
+        return 
 
     am.process_occupancy_locking_changed_event (event) # simply logs the event, does not do any processing
         

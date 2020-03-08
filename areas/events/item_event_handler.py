@@ -9,9 +9,7 @@ used by area.py
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_item_event_handler".format(LOG_PREFIX))
 
-# pylint: disable=import-error
 from core.jsr223.scope import itemRegistry 
-# pylint: enable=import-error 
 
 # load the classes
 import personal.occupancy.areas.events.event_metadata
@@ -26,6 +24,18 @@ import personal.occupancy.areas.events.event_contact
 reload (personal.occupancy.areas.events.event_contact)
 from personal.occupancy.areas.events.event_contact import Event_Contact
 
+import personal.occupancy.areas.events.event_contact_door
+reload (personal.occupancy.areas.events.event_contact_door)
+from personal.occupancy.areas.events.event_contact_door import Event_Contact_Door
+
+import personal.occupancy.areas.events.event_contact_motion
+reload (personal.occupancy.areas.events.event_contact_motion)
+from personal.occupancy.areas.events.event_contact_motion import Event_Contact_Motion
+
+import personal.occupancy.areas.events.event_contact_presence
+reload (personal.occupancy.areas.events.event_contact_presence)
+from personal.occupancy.areas.events.event_contact_presence import Event_Contact_Presence
+
 import personal.occupancy.areas.events.event_anychange
 reload (personal.occupancy.areas.events.event_anychange)
 from personal.occupancy.areas.events.event_anychange import Event_AnyChange
@@ -33,6 +43,9 @@ from personal.occupancy.areas.events.event_anychange import Event_AnyChange
 event_to_class = {
     'OnOff' : Event_OnOff, #includes dimmer items, 0 = OFF, > 0 = ON
     'Contact' : Event_Contact, #contact items, ie Open/Close
+    'ContactDoor' : Event_Contact_Door, #contact items, ie Open/Close
+    'ContactMotion' : Event_Contact_Motion, #contact items, ie Open/Close
+    'ContactPresence' : Event_Contact_Presence, #contact items, ie Open/Close
     'AnyChange' : Event_AnyChange, #contact items, ie Open/Close
 }
 

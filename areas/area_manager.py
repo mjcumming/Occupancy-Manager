@@ -64,13 +64,14 @@ class Area_Manager:
 
     def get_group_area_for_item(self,item_name): # finds the area that an item belongs to
         item = itemRegistry.getItem(item_name)
-        area_names = list (group_name for group_name in item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
+        #area_names = list (group_name for group_name in item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
+        area_names = list (group_name for group_name in item.getGroupNames () if not MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)))
 
         if not area_names: # no matching area for item
             return None
 
         area_item = itemRegistry.getItem(area_names[0])
-        #log.info ('Item {} is in area {}'.format (item.name,area_item.name))
+        log.info ('Item {} is in area {}'.format (item.name,area_item.name))
         return area_item
 
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item

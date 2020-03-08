@@ -1,26 +1,26 @@
 '''
 
-Process contact change event
+Process  motion contact change event. A motion event sets uses the Open event to signal occupnacy
+The Closed event is ignored.
 
 Convert Open/Closed events to begin/end events for the area item 
 
 '''
 
-from core.log import logging, LOG_PREFIX
-log = logging.getLogger("{}.item_event_contact".format(LOG_PREFIX))
+from org.slf4j import Logger, LoggerFactory
 
-import personal.occupancy.areas.events.event_base
-reload (personal.occupancy.areas.events.event_base)
-from personal.occupancy.areas.events.event_base import Event_Base
+log = LoggerFactory.getLogger("org.eclipse.smarthome.model.script.Rules")
 
+import area_item_event
+reload (area_item_event)
+from area_item_event import Event_Base
 
-class Event_Contact (Event_Base):
+class Event_Base_Contact_Motion (Event_Base):
 
     def process_changed_event(self,event):  
 
         Event_Base.process_changed_event(self,event)
 
-        event_settings = self.get_event_settings() 
         item_state = str(event.itemState)
        
         if item_state == "OPEN": #begin event

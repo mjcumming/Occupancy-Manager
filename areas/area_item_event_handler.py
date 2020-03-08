@@ -35,7 +35,7 @@ event_to_class = {
 }
 
 
-class Area_Item_Event_Handler():
+class Event_Base_Handler():
     
     area = None # area that we are working with
     area_item_event_handlers = None #dictionary of event handlers, indexed by item name

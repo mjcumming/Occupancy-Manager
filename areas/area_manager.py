@@ -59,20 +59,27 @@ class Area_Manager:
         items = itemRegistry.getItems()
 
         for item in items:
-            if 'Area' in item.getTags():
+            #if "Area" in item.getTags():
+            if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)):
                 self.areas [item.name] = Area(item.name,self.areas) 
+                log.info ('Added area {}'.format(item))
+
+        log.info ('Found Areas: {}'.format(self.areas))
 
     def get_group_area_for_item(self,item_name): # finds the area that an item belongs to
         item = itemRegistry.getItem(item_name)
         #area_names = list (group_name for group_name in item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
-        area_names = list (group_name for group_name in item.getGroupNames () if not MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)))
+        #area_names = list (group_name for group_name in item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)))
 
-        if not area_names: # no matching area for item
-            return None
+        for group_name in item.getGroupNames ():
+            if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
+                area_item = itemRegistry.getItem(group_name)
+                log.warn ('Item {} is in area {}'.format (item.name,area_item.name))
+                return area_item
+                 
+        log.warn ('Item {} is is not in an area'.format (item.name))
+        return None
 
-        area_item = itemRegistry.getItem(area_names[0])
-        log.info ('Item {} is in area {}'.format (item.name,area_item.name))
-        return area_item
 
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item
         area_item = self.get_group_area_for_item(item_name) #get the area_item that this item belongs too
@@ -84,7 +91,7 @@ class Area_Manager:
         if not self.areas.has_key(area_item.name): # create instance if needed
             self.areas [area_item.name] = Area(area_item.name,self.areas)
             item = itemRegistry.getItem(item_name)
-            log.info ('Area {} added.'.format(item))
+            log.warn ('Area {} added.'.format(item))
         
         return self.areas [area_item.name]
  
@@ -119,4 +126,4 @@ class Area_Manager:
             log.warn ('Area timer canceled {}.'.format(area))
             area.cancel_timer()
 
-Area_Manager()
+#Area_Manager()

@@ -86,8 +86,9 @@ class Area:
     area_event_handler = None # handler to deal with item events
 
     def __init__(self,name, area_list):
+        log.info ('Initializing Area {}'.format(name))
         self.name = str(name)
-        self.area_list = area_list #not in use yet todo
+        self.area_list = area_list
 
         self.item = itemRegistry.getItem(self.name)
         
@@ -157,17 +158,15 @@ class Area:
 
     def get_parent_area_group(self): # finds a parent area for areas list if there is one
         #names = list (group_name for group_name in self.item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
-        names = list (group_name for group_name in self.item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)) is not None)
-        if not names: # no matching area for item
-            return None
+        #names = list (group_name for group_name in self.item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)))
 
-        area_item = itemRegistry.getItem(names[0])
+        for group_name in self.item.getGroupNames ():
+            if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
+                parent_area = self.area_list [group_name]
+                return parent_area
 
-        if area_item and self.area_list.has_key(area_item.name): 
-            return self.area_list [area_item.name]
-        else:   
-            return None
-      
+        return None
+     
     def get_child_area_group_items(self):
         child_groups = []
         for child_item in self.item.members:

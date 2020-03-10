@@ -204,10 +204,17 @@ log = LoggerFactory.getLogger("org.eclipse.smarthome.model.script.Rules")
 try:
     import personal.occupancy.occupancy_manager
     reload (personal.occupancy.occupancy_manager) 
-    import personal.occupancy.occupancy_manager 
+    from  personal.occupancy.occupancy_manager import start,close
 
 except:
     log.error (traceback.format_exc())
+   
+start()
+ 
+def scriptUnloaded():
+    """ Clears out all existing timers on script unload."""
+    log.warn ('Calling occupancy manager close')
+    close ()
 ```
 
            

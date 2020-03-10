@@ -1,3 +1,4 @@
+
 import core
 from core import osgi
 from core.jsr223.scope import itemRegistry
@@ -16,8 +17,6 @@ MetadataRegistry = osgi.get_service(
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
  
-
-
 # load the area Class  
 import personal.occupancy.areas.area  
 reload (personal.occupancy.areas.area) 
@@ -39,6 +38,8 @@ class Area_Manager:
     areas = {} # dictionary of all areas indexed by area name
 
     def __init__(self):
+        log.warn('Area Manager Starting')
+
         self.setup_supporting_groups() # support group
         self.setup_areas()
 
@@ -74,12 +75,12 @@ class Area_Manager:
         for group_name in item.getGroupNames ():
             if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
                 area_item = itemRegistry.getItem(group_name)
-                log.warn ('Item {} is in area {}'.format (item.name,area_item.name))
+                log.info ('Item {} is in area {}'.format (item.name,area_item.name))
                 return area_item
                  
         log.warn ('Item {} is is not in an area'.format (item.name))
         return None
-
+ 
 
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item
         area_item = self.get_group_area_for_item(item_name) #get the area_item that this item belongs too
@@ -97,7 +98,7 @@ class Area_Manager:
  
     def process_item_changed_event(self,event):
         area = self.get_area_for_item(event.itemName)
-        log.warn ('Item Event {} Area {}.'.format(event,area))
+        log.info ('Item Event {} Area {}.'.format(event,area))
         if area:
             area.process_item_changed_event (event)        
 

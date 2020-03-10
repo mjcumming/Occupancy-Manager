@@ -31,14 +31,23 @@ from personal.occupancy.areas.area_manager import Area_Manager
   
 
 #start the area manager
-am = Area_Manager() 
+log.warn('Occupancy Manager Starting')
 
+am = None
 
-    
+def start():
+    global am
+    am = Area_Manager() 
+     
+def close():
+    """ Clears out all existing timers on script unload."""
+    log.warn ('unloading occupancy manager')
+    global am
+    am.script_unload()
+
 
 #register event handlers
-
-   
+ 
 """ 
 Receives events from items in an area 
    
@@ -53,7 +62,7 @@ gOccupancyItem group contains any items that generate events that might change t
 @when ("Member of gOccupancyItem changed")
 
 def gOccupancyItemChanged (event):
-    log.warn ('Occupancy item changed {} {}'.format(event,event.oldItemState))
+    log.warn ('Occupancy item changed. New state {}'.format(event))
 
     if event.oldItemState == NULL: # avoid events from persistance
         return
@@ -72,6 +81,7 @@ Propagates state to parent and/or child areas
 @when ("Member of gOccupancyState changed")
 
 def gOccupancyStateChanged (event):
+    log.warn ('Occupancy state changed. New state {}'.format(event))
  
     if event.oldItemState == NULL: # avoid events from persistance
         return 
@@ -123,6 +133,4 @@ def gOccupancyControlReceivedCommand (event):
     am.process_occupancy_control_received_command_event (event)
          
 
-def scriptUnloaded():
-    """ Clears out all existing timers on script unload."""
-    am.script_unload()
+

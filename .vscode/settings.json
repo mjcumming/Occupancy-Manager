@@ -1,0 +1,10 @@
+{
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.ignorePatterns": [
+        "**/automation/**/python/core/**/*.py",
+        "**/automation/**/python/community/**/*.py"
+    ],
+    "python.pythonPath": "C:\\Python27\\python.exe",
+    "python.formatting.provider": "autopep8"
+}

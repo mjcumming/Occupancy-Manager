@@ -1,0 +1,29 @@
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    unused-variable,
+    line-too-long,
+    logging-format-interpolation,
+    bare-except,
+    broad-except,
+    pointless-string-statement,
+    undefined-variable,
+    unused-argument,
+    wrong-import-position,
+    anomalous-unicode-escape-in-string,
+    global-statement
+
+ignored-modules=
+    org.joda.time,
+    java,
+    core,
+    core.jsr223,
+    core.actions,
+    community,
+    personal,
+    configuration,
+    events
+
+[DESIGN]
+# Maximum number of parents for a class (see R0901).
+max-parents=15

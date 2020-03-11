@@ -16,7 +16,6 @@ reload (personal.occupancy.areas.events.event_base)
 from personal.occupancy.areas.events.event_base import Event_Base
 
 class Event_Contact_Presence (Event_Base):
-
     def process_changed_event(self,event):  
 
         Event_Base.process_changed_event(self,event)
@@ -38,7 +37,6 @@ class Event_Contact_Presence (Event_Base):
         log.info ('Area {} locked, until event ends'.format(self.area.name))
         self.area.lock()
 
-    #subclasses can override as needed
     def end_event(self, event):
         Event_Base.end_event(self,event)
 

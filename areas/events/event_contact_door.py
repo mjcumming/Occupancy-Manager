@@ -39,7 +39,6 @@ class Event_Contact_Door (Event_Base):
         log.info ('Area {} locked, until event ends'.format(self.area.name))
         self.area.lock()
 
-    #subclasses can override as needed
     def end_event(self, event):
         Event_Base.end_event(self,event)
 

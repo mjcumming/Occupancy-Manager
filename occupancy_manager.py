@@ -7,7 +7,8 @@ Used to handle events from items that are used to determine and control occupanc
 Dispatches the events to the area manager
                                        
 """                             
-  
+import traceback
+
 from core.jsr223.scope import scriptExtension
 scriptExtension.importPreset("RuleSimple")
 scriptExtension.importPreset("RuleSupport")
@@ -60,14 +61,17 @@ gOccupancyItem group contains any items that generate events that might change t
  
 @rule ("gOccupancy Item Changed")  
 @when ("Member of gOccupancyItem changed")
-
 def gOccupancyItemChanged (event):
     log.warn ('Occupancy item changed. New state {}'.format(event))
 
     if event.oldItemState == NULL: # avoid events from persistance
         return
 
-    am.process_item_changed_event (event)
+    try:
+        am.process_item_changed_event (event)
+
+    except:
+        log.error (traceback.format_exc())
 
 """
 Responds to changes in the occupancy state of an area
@@ -86,8 +90,13 @@ def gOccupancyStateChanged (event):
     if event.oldItemState == NULL: # avoid events from persistance
         return 
     
-    am.process_occupancy_state_changed_event (event) 
-     
+    try:
+        am.process_occupancy_state_changed_event (event) 
+
+    except:
+        log.error (traceback.format_exc())
+
+    
 
 """
 
@@ -97,21 +106,32 @@ Captures all commands to an area's occupancy state OS item
  
 @rule ("gOccupancy State Command")
 @when ("Member of gOccupancyState received command")
- 
 def gOccupancyStateReceivedCommand (event):
+    log.warn ('Occupancy state received event {}'.format(event))
  
-    am.process_occupancy_state_received_command_event (event)
-   
+    if event.oldItemState == NULL: # avoid events from persistance
+        return 
+    
+    try:
+        am.process_occupancy_state_received_command_event (event)
+
+    except:
+        log.error (traceback.format_exc())
+
             
 @rule ("gOccupancy Locking Changed") 
 @when ("Member of gOccupancyLocking changed")
-
 def gOccupancyLockingChanged (event):
+    log.warn ('Occupancy locking received event {}'.format(event))
 
     if event.oldItemState == NULL: # avoid events from persistance
         return 
 
-    am.process_occupancy_locking_changed_event (event) # simply logs the event, does not do any processing
+    try:
+        am.process_occupancy_locking_changed_event (event) # simply logs the event, does not do any processing
+
+    except:
+        log.error (traceback.format_exc())
         
 
   
@@ -129,8 +149,13 @@ Changes made to a parent area are propagated to child areas
 @when ("Member of gOccupancyControl received command")
 
 def gOccupancyControlReceivedCommand (event):
+    log.warn ('Occupancy control received event {}'.format(event))
          
-    am.process_occupancy_control_received_command_event (event)
+    try:
+        am.process_occupancy_control_received_command_event (event)
+
+    except:
+        log.error (traceback.format_exc())
          
 
 

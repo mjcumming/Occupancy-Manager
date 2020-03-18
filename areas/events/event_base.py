@@ -29,7 +29,7 @@ Begin events are typically On events that set or update the state of an area to 
 End events are typically none events (we do not use them) or may be used to set an area to unoccupied to lower the time until
 an area becomes vacant 
 
- 
+  
 '''
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_item_event".format(LOG_PREFIX))

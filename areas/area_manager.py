@@ -81,7 +81,6 @@ class Area_Manager:
         log.warn ('Item {} is is not in an area'.format (item.name))
         return None
  
-
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item
         area_item = self.get_group_area_for_item(item_name) #get the area_item that this item belongs too
 
@@ -124,7 +123,7 @@ class Area_Manager:
          
     def script_unload(self):
         for area_name,area in self.areas.items():
-            log.warn ('Area timer canceled {}.'.format(area))
+            log.warn ('Area {} timer canceled {}.'.format(area_name,area))
             area.cancel_timer()
 
 #Area_Manager()

@@ -1,8 +1,9 @@
 
 import core
 from core import osgi
+from core import metadata
 from core.jsr223.scope import itemRegistry
-
+'''
 try:
     from org.openhab.core.items import Metadata, MetadataKey
 except:
@@ -13,6 +14,7 @@ MetadataRegistry = osgi.get_service(
     ) or osgi.get_service(
         "org.eclipse.smarthome.core.items.MetadataRegistry"
     ) 
+'''
 
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
@@ -51,17 +53,20 @@ class Area_Manager:
                 log.info ('GN {}, PN {}'.format(groupname,parentgroup))
                 item = core.items.add_item (groupname,item_type="Group", groups=[parentgroup])
                 log.info('{}'.format(item))
-                log.info(MetadataRegistry.get(MetadataKey('Source',item.name)))
+                #log.info(MetadataRegistry.get(MetadataKey('Source',item.name)))
+                log.info(metadata.get_value(item.name,"Source"))
+                metadata.set_value(item.name,"Source","Occupancy")
 
-                if not MetadataRegistry.get(MetadataKey('Source',item.name)):
-                    MetadataRegistry.add(Metadata(MetadataKey('Source',item.name),'Occupancy',{}))
+                #if not MetadataRegistry.get(MetadataKey('Source',item.name)):
+                #    MetadataRegistry.add(Metadata(MetadataKey('Source',item.name),'Occupancy',{}))
 
     def setup_areas(self):
         items = itemRegistry.getItems()
 
         for item in items:
             #if "Area" in item.getTags():
-            if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)):
+            if metadata.get_value(item.name,"OccupancySettings") is not None:
+            #if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)):
                 self.areas [item.name] = Area(item.name,self.areas) 
                 log.info ('Added area {}'.format(item))
 
@@ -73,7 +78,8 @@ class Area_Manager:
         #area_names = list (group_name for group_name in item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)))
 
         for group_name in item.getGroupNames ():
-            if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
+            if metadata.get_value(group_name,"OccupancySettings") is not None:
+            #if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
                 area_item = itemRegistry.getItem(group_name)
                 log.info ('Item {} is in area {}'.format (item.name,area_item.name))
                 return area_item

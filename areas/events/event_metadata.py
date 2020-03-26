@@ -18,9 +18,9 @@ an area becomes vacent
 
 ''' 
 
-import personal.item_metadata.metadata_item_namespace
-reload (personal.item_metadata.metadata_item_namespace) 
-from personal.item_metadata.metadata_item_namespace import Metadata_Item_Namespace
+import personal.occupancy.support.metadata_item_namespace
+reload (personal.occupancy.support.metadata_item_namespace) 
+from personal.occupancy.support.metadata_item_namespace import Metadata_Item_Namespace
 
 class Event_Metadata(Metadata_Item_Namespace):
 

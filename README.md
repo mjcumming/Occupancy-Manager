@@ -190,8 +190,6 @@ INSTALLATION
 
 Create a folder named occupancy in the automation/lib/python/personal folder. Copy these fills into the occupancy folder.
 
-Also install the Item Metadata repository files https://github.com/mjcumming/Item-Metadata
-
 Create a script in the automation/jsr232/python/personal folder called start_occupancy_manager.py 
 
 ```

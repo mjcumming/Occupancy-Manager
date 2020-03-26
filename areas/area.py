@@ -18,7 +18,8 @@ import core.items
 from core.jsr223.scope import itemRegistry
 from core.jsr223.scope import events   
 from core import osgi
-
+from core import metadata 
+'''
 try:
     from org.openhab.core.items import Metadata, MetadataKey
 except:
@@ -29,7 +30,7 @@ MetadataRegistry = osgi.get_service(
     ) or osgi.get_service(
         "org.eclipse.smarthome.core.items.MetadataRegistry"
     )
-    
+'''    
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area".format(LOG_PREFIX))
 
@@ -114,9 +115,10 @@ class Area:
             if items.size() == 0:
                 log.info ('Adding supporting items... Item {}, Parent {}'.format(item_name,parentgroup))
                 item = core.items.add_item (item_name,item_type=supporting_item_types [prefix], groups=[parentgroup,self.name])
+                metadata.set_value (item.name,'Source','Occupancy')# tag the item so we know we created it
                 
-                if not MetadataRegistry.get(MetadataKey('Source',item.name)): # tag the item so we know we created it
-                    MetadataRegistry.add(Metadata(MetadataKey('Source',item.name),'Occupancy',{}))        
+                #if not MetadataRegistry.get(MetadataKey('Source',item.name)): # tag the item so we know we created it
+                #    MetadataRegistry.add(Metadata(MetadataKey('Source',item.name),'Occupancy',{}))        
 
         self.occupancy_control_item = self.get_occupancy_control_item_for_area(self.name)
         self.occupancy_state_item = self.get_occupancy_state_item_for_area(self.name)
@@ -158,7 +160,8 @@ class Area:
     def get_occupancy_items(self): # gets all items that cause occupancy events
         event_items = []
         for child_item in self.item.members:
-            if MetadataRegistry.get(MetadataKey('OccupancyEvent',child_item.name)):
+            if metadata.get_value(child_item.name,'OccupancyEvent') is not None:
+            #if MetadataRegistry.get(MetadataKey('OccupancyEvent',child_item.name)):
                 event_items.append(child_item)
 
         return event_items        
@@ -167,7 +170,8 @@ class Area:
         #names = list (group_name for group_name in self.item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
 
         for group_name in self.item.getGroupNames ():
-            if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
+            if metadata.get_value(group_name,'OccupancySettings') is not None:
+            #if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
                 parent_area = self.area_list [group_name]
                 return parent_area
 
@@ -176,8 +180,8 @@ class Area:
     def get_child_area_group_items(self): #gets all child area groups
         child_groups = []
         for child_item in self.item.members:
-            #if "Area" in child_item.getTags():
-            if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
+            if metadata.get_value(child_item.name,'OccupancySettings') is not None:
+            #if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
                 child_groups.append(child_item)
 
         return child_groups
@@ -280,7 +284,8 @@ class Area:
             # when area is vacant, force child areas to vacant
             for child_item in self.item.members:
                 #if "Area" in child_item.getTags():
-                if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
+                if metadata.get_value(child_item.name,'OccupancySettings') is not None:
+                #if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
                     area = self.area_list [child_item.name]
                     log.info ("Propagating occupancy state to child area {}".format(child_item.name))
                     area.set_area_vacant ('Parent Vacant')
@@ -422,6 +427,7 @@ class Area:
         occupancy_items=self.get_occupancy_items()
 
         for item in occupancy_items:
-            event=MetadataRegistry.get(MetadataKey("OccupancyEvent",item.name))
+            event=metadata.get_value(item.name,"OccupancyEvent")
+            #event=MetadataRegistry.get(MetadataKey("OccupancyEvent",item.name))
             log.warn(indent+'    {} event settings {}'.format(item.name,event))
 

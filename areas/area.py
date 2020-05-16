@@ -19,6 +19,10 @@ from core.jsr223.scope import itemRegistry
 from core.jsr223.scope import events   
 from core import osgi
 from core import metadata 
+from core.actions import ScriptExecution
+
+from org.joda.time import DateTime
+
 '''
 try:
     from org.openhab.core.items import Metadata, MetadataKey
@@ -132,7 +136,7 @@ class Area:
 
     def get_occupancy_locking_item_for_area(self,name):
         return itemRegistry.getItem(str("OL_"+name [1:]))
-
+    '''
     def start_timer(self, time_out_seconds):
         time_started = datetime.datetime.now()
 
@@ -150,8 +154,31 @@ class Area:
         log.warn("Occupancy Timer for area {} expires at {}".format(self.name,self.occupancy_timeout))
 
     def cancel_timer(self):
-        log.info ("Occupancy timer for area {} canceled".format(self.name))
         if self.occupancy_timer is not None:
+            log.warn ("Occupancy timer for area {} canceled".format(self.name))
+            old_timer = self.occupancy_timer 
+            self.occupancy_timer = None
+            old_timer.cancel()
+            self.occupancy_timeout = None
+    '''
+    def start_timer(self, time_out_seconds):
+        time_started = DateTime.now()
+
+        def timeout_callback():
+            log.warn("Occupancy timer for area {} expired, timer was started at {}".format(self.name,time_started)) 
+            self.set_area_vacant('Timer Expired')
+            self.occupancy_timer = None
+            self.occupancy_timeout = None        
+
+        self.cancel_timer()
+
+        self.occupancy_timer = ScriptExecution.createTimer(DateTime.now().plusSeconds(time_out_seconds), timeout_callback)
+        self.occupancy_timeout = DateTime.now().plusSeconds(time_out_seconds)
+        log.warn("Occupancy Timer for area {} expires at {}".format(self.name,self.occupancy_timeout))
+
+    def cancel_timer(self):
+        if self.occupancy_timer is not None:
+            log.warn ("Occupancy timer for area {} canceled".format(self.name))
             old_timer = self.occupancy_timer 
             self.occupancy_timer = None
             old_timer.cancel()
@@ -196,7 +223,7 @@ class Area:
         self.locking_level = self.locking_level + 1
         if self.locking_level == 1: # went from unlocked to locked, manage area timer
             if self.occupancy_timeout: # timer was running, store time remaining
-                self.time_left_when_locked =self.occupancy_timeout - datetime.datetime.now() # save time left
+                self.time_left_when_locked =self.occupancy_timeout - DateTime.now() # save time left
                 log.info("Occupancy Locking turned on, time left in minutes {}".format(int(self.time_left_when_locked.seconds/60)))
             # cancel running timer
             self.cancel_timer()
@@ -309,9 +336,6 @@ class Area:
         if self.occupancy_settings.exists(): # must have these to proceed
             state = str(event.itemState)
             log.warn("Occupancy state changed to {} ---->>> Settings for area {}: {} ".format (state, self.name,self.occupancy_settings))
-
-            #if True:
-            #    return
 
             if not self.is_locked(): # check if area locked before proceeding 
                 if state == 'ON':

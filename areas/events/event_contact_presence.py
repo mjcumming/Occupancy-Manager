@@ -1,7 +1,8 @@
 '''
 
-Process presence contact change event. A presence event sets uses the Open event to signal occupnacy
-The Closed event ends the occupancy. Area is considered occupied until the door is closed.
+Process presence contact change event. A presence event sets uses the Open event to signal occupancy
+The Closed event ends the occupancy. Area is considered occupied until the event ends. No other items 
+can change the occupancy state of the area.
 
 Convert Open/Closed events to begin/end events for the area item 
 

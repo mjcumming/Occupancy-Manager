@@ -23,7 +23,7 @@ ModifyBehavior - overrides default settings
 
 Occupancy events can override the occupancy times specified in the area
     BeginOccupancyTime is set when the event begins
-    EndOccupancyTime is set when the event ends
+    EndOccupancyTime is set when the event ends, an end time of 0 indicates that the area is vacant when the event ends
 
 Begin events are typically On events that set or update the state of an area to Occupied
 End events are typically none events (we do not use them) or may be used to set an area to unoccupied to lower the time until
@@ -85,8 +85,11 @@ class Event_Base():
         if not self.area.is_locked(): # check if area locked before proceeding with standard events
             override_occupancy_time = event_settings.get_end_occupied_time()
 
-            if override_occupancy_time: #override default time 
-                self.area.set_area_occupied (self.item_name,override_occupancy_time)
+            if override_occupancy_time is not None: #override default time 
+                if override_occupancy_time > 0:
+                    self.area.set_area_occupied (self.item_name,override_occupancy_time)
+                else:
+                    self.area.set_area_vacant ("Item {} event ended with occupancy time of 0".format(self.item_name))
             # otherwise, do nothing, as end events typically do not indicate a change in state unless a time is specified
         
         elif event_settings.occupied_until_ended ():

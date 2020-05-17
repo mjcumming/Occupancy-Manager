@@ -3,18 +3,6 @@ import core
 from core import osgi
 from core import metadata
 from core.jsr223.scope import itemRegistry
-'''
-try:
-    from org.openhab.core.items import Metadata, MetadataKey
-except:
-    from org.eclipse.smarthome.core.items import Metadata, MetadataKey
-
-MetadataRegistry = osgi.get_service(
-        "org.openhab.core.items.MetadataRegistry"
-    ) or osgi.get_service(
-        "org.eclipse.smarthome.core.items.MetadataRegistry"
-    ) 
-'''
 
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
@@ -45,59 +33,47 @@ class Area_Manager:
         self.setup_supporting_groups() # support group
         self.setup_areas()
 
-    def setup_supporting_groups(self):
+    def setup_supporting_groups(self): # add supporting groups from dictionary above
         for groupname,parentgroup in supporting_groups.iteritems():
             items = itemRegistry.getItems(groupname)
  
             if items.size() == 0:
-                log.info ('GN {}, PN {}'.format(groupname,parentgroup))
                 item = core.items.add_item (groupname,item_type="Group", groups=[parentgroup])
-                log.info('{}'.format(item))
-                #log.info(MetadataRegistry.get(MetadataKey('Source',item.name)))
-                log.info(metadata.get_value(item.name,"Source"))
-                metadata.set_value(item.name,"Source","Occupancy")
+                metadata.set_value(item.name,"Source","Occupancy") # set metadata to indicate we created this group
 
-                #if not MetadataRegistry.get(MetadataKey('Source',item.name)):
-                #    MetadataRegistry.add(Metadata(MetadataKey('Source',item.name),'Occupancy',{}))
+    def add_area(self,area_item):
+        self.areas [area_item.name] = Area(area_item,self.areas) 
+        log.info ('Added area {}'.format(area_item))
 
     def setup_areas(self):
         items = itemRegistry.getItems()
 
         for item in items:
-            #if "Area" in item.getTags():
-            if metadata.get_value(item.name,"OccupancySettings") is not None:
-            #if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)):
-                self.areas [item.name] = Area(item.name,self.areas) 
-                log.info ('Added area {}'.format(item))
+            if metadata.get_value(item.name,"OccupancySettings") is not None: # add any group with the metadata key OccupancySettings
+                self.add_area(item)
 
         log.info ('Found Areas: {}'.format(self.areas))
 
-    def get_group_area_for_item(self,item_name): # finds the area that an item belongs to
+    def get_group_area_item_for_item(self,item_name): # finds the area that an item belongs to
         item = itemRegistry.getItem(item_name)
-        #area_names = list (group_name for group_name in item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
-        #area_names = list (group_name for group_name in item.getGroupNames () if MetadataRegistry.get(MetadataKey('OccupancySettings',item.name)))
 
-        for group_name in item.getGroupNames ():
-            if metadata.get_value(group_name,"OccupancySettings") is not None:
-            #if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
+        for group_name in item.getGroupNames (): # find the group occupancy area item for this item
+            if metadata.get_value(group_name,"OccupancySettings") is not None: 
                 area_item = itemRegistry.getItem(group_name)
                 log.info ('Item {} is in area {}'.format (item.name,area_item.name))
                 return area_item
                  
-        log.warn ('Item {} is is not in an area'.format (item.name))
         return None
  
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item
-        area_item = self.get_group_area_for_item(item_name) #get the area_item that this item belongs too
+        area_item = self.get_group_area_item_for_item(item_name) #get the area_item that this item belongs too
 
         if not area_item:
             log.info ('Item {} does not belong to an Area.'.format(item_name))
             return False
 
         if not self.areas.has_key(area_item.name): # create instance if needed
-            self.areas [area_item.name] = Area(area_item.name,self.areas)
-            item = itemRegistry.getItem(item_name)
-            log.warn ('Area {} added.'.format(item))
+            self.add_area(area_item)
         
         return self.areas [area_item.name]
  

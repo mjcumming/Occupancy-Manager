@@ -53,7 +53,13 @@ class Event_Metadata(Metadata_Item_Namespace):
             return False
 
     def get_begin_occupied_time(self):
-        return self.get_value_for_configuration_key('BeginOccupiedTime')
+        if self.get_value_for_configuration_key('BeginOccupiedTime') is None:
+            return None 
+        else:
+            return int(self.get_value_for_configuration_key('BeginOccupiedTime'))
 
     def get_end_occupied_time(self):
-        return self.get_value_for_configuration_key('EndOccupiedTime')
+        if self.get_value_for_configuration_key('EndOccupiedTime') is None:
+            return None 
+        else:
+            return int(self.get_value_for_configuration_key('EndOccupiedTime'))

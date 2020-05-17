@@ -11,8 +11,8 @@ Handles events that occur from items located within an area to determine occupan
 
 '''
  
-import datetime
-from threading import Timer
+#import datetime
+#from threading import Timer
 
 import core.items 
 from core.jsr223.scope import itemRegistry
@@ -71,34 +71,26 @@ def send_command (item,command):
 
 class Area:
 
-    name = None # name of the area group that we are tracking occupancy for
-    item = None # the group item for this area
+    def __init__(self,item, area_list):
+        self.item = item
+        self.name = str(item.name)
 
-    last_event_item = None # last event that triggered occupancy
-
-    occupancy_timer = None # timer that is used to count down occupancy
-    occupancy_timeout = None # if not None represents the time the timer will fire at
-    time_left_when_locked = None # residual time on timer when room locked, used to restore timer after unlock
-
-    lock_timer = None # timer for temporary area locking, needs more work to check if existing lock timer exists and how to manage...
-
-    locking_level = 0 # number of times an area has been locked, 0 = unlocked
-
-    occupancy_control_item = None # OC item for the area
-
-    occupancy_state_item = None # OS item for the area
-
-    occupancy_locking_item = None # OL itemt for the area
-
-    area_event_handler = None # handler to deal with item events
-
-    def __init__(self,name, area_list):
-        log.info ('Initializing Area {}'.format(name))
-        self.name = str(name)
+        log.info ('Initializing Area {}'.format(self.name))
         self.area_list = area_list
 
-        self.item = itemRegistry.getItem(self.name)
-        
+        self.occupancy_timer = None # timer that is used to count down occupancy
+        self.occupancy_timeout = None # if not None represents the time the timer will fire at
+        self.time_left_when_locked = None # residual time on timer when room locked, used to restore timer after unlock
+
+        self.lock_timer = None # timer for temporary area locking, needs more work to check if existing lock timer exists and how to manage...
+        self.locking_level = 0 # number of times an area has been locked, 0 = unlocked
+
+        self.occupancy_control_item = None # OC item for the area
+        self.occupancy_state_item = None # OS item for 
+        self.occupancy_locking_item = None # OL itemt for the area
+
+        self.last_event_item = None # last event that triggered occupancy
+
         self.item_event_handler = Item_Event_Handler (self) # used to process events from an item in the area
         
         self.setup_supporting_items () # support group items
@@ -260,8 +252,8 @@ class Area:
             log.warn("Occupancy LOCK timer for area {} expired".format(self.name)) 
             self.unlock()
 
+        self.lock_timer = ScriptExecution.createTimer(DateTime.now().plusSeconds(time_out_seconds), timeout_callback)
         self.lock_timer = Timer(time_out_seconds, timeout_callback)
-        self.lock_timer.start()
         log.warn("Occupancy LOCK timer for area {} started for {} seconds".format(self.name,time_out_seconds))
 
     def is_area_occupied (self):
@@ -279,6 +271,10 @@ class Area:
 
             if occupancy_time is not None:
                 occupancy_time = int(occupancy_time)
+
+                if occupancy_time == 0: #set area vacant
+                    self.set_area_vacant("Occupancy time of 0 for last event")
+                    return
 
             log.warn("Area {} is occupied, triggering item {}, using occupancy time of {} ".format (self.name,reason,occupancy_time))
             # set or update occupancy timer as required
@@ -320,7 +316,7 @@ class Area:
         else: # note we cannot really fix this here, user needs to not set an area vacant if it is locked ** may need to change this behavior
             log.info ('Area {} is locked.'.format(self.name))
 
-    # ------------------------ event handlers events related to occupancy, called from the occupancy manager ------------------------
+    # ------------------------ event handlers for events related to occupancy, called from the occupancy manager ------------------------
 
     def process_item_changed_event(self,event): # an item that is a member of this area changed, update OS, reset area timer as required
         self.item_event_handler.process_item_changed_event(event) #dispatch to handler, this will update OS state using area and item metadata

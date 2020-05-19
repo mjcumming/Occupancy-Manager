@@ -91,21 +91,19 @@ An occupancy event in the First Floor bathroom will automatically update the occ
 
 Any OpenHAB item (device) can be used to set the occupancy or vacancy of an area. Items used change occupancy status are assigned to the group **gOccupancyItem**. This group is used in a rule to catch changes to its members and propagate that event to the occupancy manager. The **gOccupanyItem** group is created automatically by the occupancy manager.
 
-Items used for occupancy use item metadata to determine how the events from the item change occupancy status. The namespace **OccupancyEvent** is set to the type of event that the item generates (examples below). Currently, there 4 types of predefined events that items can generate.
+Items used for occupancy use item metadata to determine how the events from the item change occupancy status. The namespace **OccupancyEvent** is set to the type of event that the item generates (examples below). Currently, there are 4 types of predefined events that items can generate.
 
-**OnOff** = Generates an occupancy event when the item is turned on (i.e. light switch). No event when the item is turned off.
+**OnOff** = Generates an occupancy event when the item is turned on (i.e. light switch). No change in occupancy when the item is turned off. To change occupancy of the area to vacant when an item is turned off, set the EndOccupiedTime to 0 as shown below
 
 **ContactMotion** = Generates an occupancy event when the contact is opened, no event when the contact closes
 
-**ContactDoor** = Generates an occupancy event when the contact is opened, the area remains in an occupied state until the door is closed. The occupancy timer
-starts when the door is closed.
+**ContactDoor** = Generates an occupancy event when the contact is opened, the area remains in an occupied state until the door is closed. The occupancy timer starts when the door is closed.
 
-**ContactPresence** = Generates an occupancy event when the contact is opened, the area remains in an occupied state until the sensor is closed. The area is
-set to vacant immediately when the close event occurs.
+**ContactPresence** = Generates an occupancy event when the contact is opened, the area remains in an occupied state until the sensor is closed. The area is set to vacant immediately when the close event occurs.
 
 **AnyChange** = Generates an occupancy event when the item state changes.
 
-Switches (i.e. lights, power states) and Dimmer (lights, volume controls) items use the **OnOff** event. Contact items uses one of the 3 contact event types
+Switches (i.e. lights, power states) and Dimmer (lights, volume controls) items use the **OnOff** event. Contact items use one of the 3 contact event types
 
 In addition to generate events to set an area as occupied or vacant, there are metadata key/value pairs that are used to modify the standard behavior of the
 predefined occupancy events. These key value pairs include BeginOccupiedTime and EndOccupiedTime. These additional settings allow overriding the default occupied
@@ -128,6 +126,11 @@ Dimmer
 Dimmer  MF_PantryLight_Dimmmer "Pantry Light"  <light>     (gMF_Pantry,gLightSwitch,gOccupancyItem) ["Lighting"]   {channel="xxx", OccupancyEvent = OnOff"}                                                           
 ```
 
+Dimmer, set area vacant when turned off
+```
+Dimmer  MF_PantryLight_Dimmmer "Pantry Light"  <light>     (gMF_Pantry,gLightSwitch,gOccupancyItem) ["Lighting"]   {channel="xxx", OccupancyEvent = OnOff" [EndOccupiedTime = 0]}                                                           
+```
+
 Switch
 ```
 Switch	BM_AVReceiver_GeneralPower	"Power"	<receiver>	(gBM_RecRoom,gAVPower,gOccupancyItem)	{channel="xx", OccupancyEvent = "OnOff"}
@@ -146,7 +149,6 @@ Any Change in State
 ```
 String	ECHO_Kitchen_LastVoiceCommand	"Last voice command"	(gMF_Kitchen,gOccupancyItem)   {channel="xx", OccupancyEvent = "AnyChange"}
 ```
-
 
 
 **Item Control**

@@ -11,30 +11,16 @@ Handles events that occur from items located within an area to determine occupan
 
 '''
  
-#import datetime
-#from threading import Timer
-
 import core.items 
 from core.jsr223.scope import itemRegistry
 from core.jsr223.scope import events   
 from core import osgi
 from core import metadata 
 from core.actions import ScriptExecution
+from core.date import seconds_between
 
 from org.joda.time import DateTime
 
-'''
-try:
-    from org.openhab.core.items import Metadata, MetadataKey
-except:
-    from org.eclipse.smarthome.core.items import Metadata, MetadataKey
-
-MetadataRegistry = osgi.get_service(
-        "org.openhab.core.items.MetadataRegistry"
-    ) or osgi.get_service(
-        "org.eclipse.smarthome.core.items.MetadataRegistry"
-    )
-'''    
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area".format(LOG_PREFIX))
 
@@ -80,7 +66,7 @@ class Area:
 
         self.occupancy_timer = None # timer that is used to count down occupancy
         self.occupancy_timeout = None # if not None represents the time the timer will fire at
-        self.time_left_when_locked = None # residual time on timer when room locked, used to restore timer after unlock
+        self.seconds_left_when_locked = None # residual seconds on timer when room locked, used to restore timer after unlock
 
         self.lock_timer = None # timer for temporary area locking, needs more work to check if existing lock timer exists and how to manage...
         self.locking_level = 0 # number of times an area has been locked, 0 = unlocked
@@ -128,31 +114,7 @@ class Area:
 
     def get_occupancy_locking_item_for_area(self,name):
         return itemRegistry.getItem(str("OL_"+name [1:]))
-    '''
-    def start_timer(self, time_out_seconds):
-        time_started = datetime.datetime.now()
 
-        def timeout_callback():
-            log.warn("Occupancy timer for area {} expired, timer was started at {}".format(self.name,time_started)) 
-            self.set_area_vacant('Timer Expired')
-            self.occupancy_timer = None
-            self.occupancy_timeout = None        
-
-        self.cancel_timer()
-
-        self.occupancy_timer = Timer(time_out_seconds, timeout_callback)
-        self.occupancy_timer.start()
-        self.occupancy_timeout = datetime.datetime.now() + datetime.timedelta(seconds=time_out_seconds)
-        log.warn("Occupancy Timer for area {} expires at {}".format(self.name,self.occupancy_timeout))
-
-    def cancel_timer(self):
-        if self.occupancy_timer is not None:
-            log.warn ("Occupancy timer for area {} canceled".format(self.name))
-            old_timer = self.occupancy_timer 
-            self.occupancy_timer = None
-            old_timer.cancel()
-            self.occupancy_timeout = None
-    '''
     def start_timer(self, time_out_seconds):
         time_started = DateTime.now()
 
@@ -170,7 +132,7 @@ class Area:
 
     def cancel_timer(self):
         if self.occupancy_timer is not None:
-            log.warn ("Occupancy timer for area {} canceled".format(self.name))
+            log.info ("Occupancy timer for area {} canceled".format(self.name))
             old_timer = self.occupancy_timer 
             self.occupancy_timer = None
             old_timer.cancel()
@@ -214,11 +176,11 @@ class Area:
     def lock(self):
         self.locking_level = self.locking_level + 1
         if self.locking_level == 1: # went from unlocked to locked, manage area timer
-            if self.occupancy_timeout: # timer was running, store time remaining
-                self.time_left_when_locked =self.occupancy_timeout - DateTime.now() # save time left
-                log.info("Occupancy Locking turned on, time left in minutes {}".format(int(self.time_left_when_locked.seconds/60)))
-            # cancel running timer
-            self.cancel_timer()
+            if self.occupancy_timer: # timer is running, store time remaining
+                self.seconds_left_when_locked = seconds_between(DateTime.now(),self.occupancy_timeout) # save seconds left
+                log.warn("Occupancy Locking turned on, time left in minutes {}".format(int(self.seconds_left_when_locked/60)))
+                # cancel running timer
+                self.cancel_timer()
 
         # update locking state
         events.postUpdate (self.occupancy_locking_item,'ON') 
@@ -228,10 +190,11 @@ class Area:
 
         if self.locking_level == 0: # area unlocked
             # restart timer if time was left on it
-            if self.time_left_when_locked is not None:
+            if self.seconds_left_when_locked is not None:
                 if self.is_area_occupied(): #area occupied, restart timer
-                    log.info("Occupancy Locking turned off for area {}, Timer restarted with time left {} minutes ".format (self.name,int(self.time_left_when_locked.seconds/60)))  
-                    self.start_timer(self.time_left_when_locked.seconds)  
+                    log.warn("Occupancy Locking turned off for area {}, Timer restarted with time left {} minutes ".format (self.name,int(self.seconds_left_when_locked/60)))  
+                    self.start_timer(self.seconds_left_when_locked)
+                    self.seconds_left_when_locked = None
             else:
                 log.info("Occupancy Locking turned off for area {}, area vacant and timer NOT restarted".format (self.name))  
 

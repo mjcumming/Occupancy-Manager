@@ -14,6 +14,7 @@ Handles events that occur from items located within an area to determine occupan
 import core.items 
 from core.jsr223.scope import itemRegistry
 from core.jsr223.scope import events   
+from core.jsr223.scope import ON
 from core import osgi
 from core import metadata 
 from core.actions import ScriptExecution
@@ -55,8 +56,8 @@ def send_command (item,command):
     events.sendCommand (item,command)
 
 
-class Area:
-
+class Area(object):
+    
     def __init__(self,item, area_list):
         self.item = item
         self.name = str(item.name)
@@ -70,6 +71,7 @@ class Area:
 
         self.lock_timer = None # timer for temporary area locking, needs more work to check if existing lock timer exists and how to manage...
         self.locking_level = 0 # number of times an area has been locked, 0 = unlocked
+        self.lock = None
 
         self.occupancy_control_item = None # OC item for the area
         self.occupancy_state_item = None # OS item for 
@@ -82,7 +84,7 @@ class Area:
         self.setup_supporting_items () # support group items
 
         self.occupancy_settings = Area_Occupancy_Event_Metadata(self.name) # reads the group item metadata to determine how occupancy functions
-
+        
     def __str__(self):
         ot = self.occupancy_timeout or 'Vacant'
         return 'Area: {}, Occupied until = {}, {}'.format(self.name, ot, (self.is_locked() and 'Locked' or 'Unlocked'))
@@ -106,6 +108,9 @@ class Area:
         self.occupancy_state_item = self.get_occupancy_state_item_for_area(self.name)
         self.occupancy_locking_item = self.get_occupancy_locking_item_for_area(self.name)
 
+    def set_lock(self, lock):
+        self.lock = lock
+        
     def get_occupancy_state_item_for_area(self,name):
         return itemRegistry.getItem(str("OS_"+name [1:]))
 
@@ -147,32 +152,27 @@ class Area:
 
         return event_items        
 
-    def get_parent_area_group(self): # finds a parent area for areas list if there is one
+    def get_parent_area_groups(self): # finds parent areas for areas list if there are any
         #names = list (group_name for group_name in self.item.getGroupNames () if "Area" in itemRegistry.getItem (group_name).getTags ()) 
-
+        parent_area_groups = []
         for group_name in self.item.getGroupNames ():
             if metadata.get_value(group_name,'OccupancySettings') is not None:
             #if MetadataRegistry.get(MetadataKey('OccupancySettings',group_name)):
-                parent_area = self.area_list [group_name]
-                return parent_area
+                parent_area_groups.append(self.area_list [group_name])
+        return parent_area_groups
 
-        return None
-     
     def get_child_area_group_items(self): #gets all child area groups
         child_groups = []
         for child_item in self.item.members:
-            if metadata.get_value(child_item.name,'OccupancySettings') is not None:
+            if metadata.get_value(child_item.name,'OccupancySettings') != None:
             #if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
                 child_groups.append(child_item)
 
         return child_groups
 
     def is_locked(self): # returns true if area is locked
-        if self.locking_level>0:
-            return True
-        else:
-            return False
-
+        return self.locking_level>0 or (self.lock is not None and self.lock.is_area_occupied())
+            
     def lock(self):
         self.locking_level = self.locking_level + 1
         if self.locking_level == 1: # went from unlocked to locked, manage area timer
@@ -220,23 +220,20 @@ class Area:
         log.warn("Occupancy LOCK timer for area {} started for {} seconds".format(self.name,time_out_seconds))
 
     def is_area_occupied (self):
-        if str(self.occupancy_state_item.state) == 'ON':
-            return True
-        else:
-            return False
+        return str(self.occupancy_state_item.state) == 'ON'
     
     def update_group_OS_item(self,state): # use updates to change OS state, commands are sent from external actions/scripts
         events.postUpdate(self.occupancy_state_item,state) # post update NOT send command, exteral actions in scripts use send command to set OS state
 
-    def set_area_occupied(self,reason,occupancy_time = None):
-        if not self.is_locked(): # check if area locked before proceeding 
+    def set_area_occupied(self,reason,occupancy_time = None,override_lock = False):
+        if override_lock or not self.is_locked(): # check if area locked before proceeding 
             occupancy_time = occupancy_time or self.occupancy_settings.get_occupancy_time()
 
             if occupancy_time is not None:
                 occupancy_time = int(occupancy_time)
-
+                
                 if occupancy_time == 0: #set area vacant
-                    self.set_area_vacant("Occupancy time of 0 for last event")
+                    self.set_area_vacant("Occupancy time of 0 for last event", override_lock)
                     return
 
             log.warn("Area {} is occupied, triggering item {}, using occupancy time of {} ".format (self.name,reason,occupancy_time))
@@ -247,43 +244,45 @@ class Area:
                 self.start_timer(occupancy_time*60)  
                 self.update_group_OS_item('ON')
             elif occupancy_time == 0: # got an occupancy item event specifying off, ie time 0
-                self.set_area_vacant('Occupancy Time 0') 
+                self.set_area_vacant('Occupancy Time 0', overrid_lock) 
                 return # do not propagate an "off" event to parent areas (below)
+            elif occupancy_time < 0: # temporary hack to support occupancy on without a timer
+                self.update_group_OS_item('ON')            
             else:#invalid number
                 log.warn('Invalid occupancy time {} for area {} occupied event.'.format(occupancy_time,self.name))
         else:
             log.warn ('Area {} is locked, occupancy state not changed'.format(self.name))
 
-        #propagate event to parent area
-        parent_area = self.get_parent_area_group() 
-        log.info ('Area {} is propagting event to {}'.format(self.name,parent_area))
-        if parent_area:
-            parent_area.set_area_occupied ("Child Area Event")
+        #propagate event to parent area groups
+        if self.propagates_events():
+            for parent__area in self.get_parent_area_groups():
+                log.info ('Area {} is propagting event to {}'.format(self.name,parent_area))
+                parent_area.set_area_occupied ("Child Area Event")
  
-    def set_area_vacant(self,reason):
+    def set_area_vacant(self,reason,override_lock = False):
         log.warn("Set Area {} to vacant, reason {}".format (self.name,reason))
-
-        if not self.is_locked(): # check if area locked before proceeding 
+        if override_lock or not self.is_locked(): # check if area locked before proceeding 
             self.update_group_OS_item('OFF')
             self.cancel_timer() # cancel any running timers
 
             # when area is vacant, force child areas to vacant
-            for child_item in self.item.members:
-                #if "Area" in child_item.getTags():
-                if metadata.get_value(child_item.name,'OccupancySettings') is not None:
-                #if MetadataRegistry.get(MetadataKey('OccupancySettings',child_item.name)):
-                    area = self.area_list [child_item.name]
+            for child_item in self.get_child_area_group_items():
+                area = self.area_list [child_item.name]
+                if area.propagates_events():
                     log.info ("Propagating occupancy state to child area {}".format(child_item.name))
                     area.set_area_vacant ('Parent Vacant')
         
         else: # note we cannot really fix this here, user needs to not set an area vacant if it is locked ** may need to change this behavior
             log.info ('Area {} is locked.'.format(self.name))
-
+            
+    def propagates_events(self):
+        return True
+        
     # ------------------------ event handlers for events related to occupancy, called from the occupancy manager ------------------------
 
     def process_item_changed_event(self,event): # an item that is a member of this area changed, update OS, reset area timer as required
         self.item_event_handler.process_item_changed_event(event) #dispatch to handler, this will update OS state using area and item metadata
-
+            
     def process_occupancy_state_received_command_event(self,event): # OS command event handler, external command that change the OS of an area
         log.warn("Area {} state received direct command from OS item {}".format (self.name,event.itemCommand))
         if str(event.itemCommand) == 'ON':
@@ -363,7 +362,7 @@ class Area:
                             log.info ('Unknown action {} in area {}'.format(action,self.name))
 
             else:#area locked
-                log.warn ("Area {} is locked, occupancy state changed, should not happen".format(self.name))
+                log.warn ("Area {} is locked, occupancy state changed".format(self.name))
                 #self.update_group_OS_item(,event.oldItemState) **** cannot do this results in endless event loop
                 #if event.oldItemState == 'ON': # do not allow area to be vacant if it was on and locked
                  #   self.update_group_OS_item('ON',item)
@@ -404,7 +403,7 @@ class Area:
 
     def log_details(self,level,indent): #logs all details about the area
         ot = self.occupancy_timeout or 'Vacant'
-        log.warn(indent+'Area: {}, Occupied until = {}, {}'.format(self.name, ot, (self.is_locked() and 'Locked' or 'Unlocked')))
+        log.warn(indent+'Area: {}, Occupied until = {}, {}'.format(self.name, ot, self.is_locked() and 'Locked' or 'Unlocked'))
 
         log.warn(indent+'  Occupancy Items:')
         occupancy_items=self.get_occupancy_items()
@@ -413,4 +412,3 @@ class Area:
             event=metadata.get_value(item.name,"OccupancyEvent")
             #event=MetadataRegistry.get(MetadataKey("OccupancyEvent",item.name))
             log.warn(indent+'    {} event settings {}'.format(item.name,event))
-

@@ -156,6 +156,3 @@ def gOccupancyControlReceivedCommand (event):
 
     except:
         log.error (traceback.format_exc())
-         
-
-

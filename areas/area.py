@@ -133,9 +133,8 @@ class Area:
     def cancel_timer(self):
         if self.occupancy_timer is not None:
             log.info ("Occupancy timer for area {} canceled".format(self.name))
-            old_timer = self.occupancy_timer 
+            self.occupancy_timer.cancel
             self.occupancy_timer = None
-            old_timer.cancel()
             self.occupancy_timeout = None
 
     def get_occupancy_items(self): # gets all items that cause occupancy events

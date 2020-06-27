@@ -6,6 +6,8 @@ from core.jsr223.scope import itemRegistry
 
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
+
+log.warn('Area Manager Loaded')
  
 # load the area Class  
 import personal.occupancy.areas.area  
@@ -21,8 +23,7 @@ supporting_groups = {
     'gOccupancyControl' : 'gOccupancy', #used to send commands to set the behavior of the area, add OC_XXX items to the area
     'gOccupancyLocking' : 'gOccupancy', # represents whether an area is locked or not
 }
- 
- 
+
 class Area_Manager:
 
     areas = {} # dictionary of all areas indexed by area name
@@ -79,7 +80,7 @@ class Area_Manager:
  
     def process_item_changed_event(self,event):
         area = self.get_area_for_item(event.itemName)
-        log.info ('Item Event {} Area {}.'.format(event,area))
+        log.info ('Area {} Item Event {}.'.format(area,event))
         if area:
             area.process_item_changed_event (event)        
 

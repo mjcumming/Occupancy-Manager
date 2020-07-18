@@ -10,7 +10,6 @@ log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
 import personal.occupancy.areas.area  
 reload (personal.occupancy.areas.area) 
 from personal.occupancy.areas.area import Area 
-from personal.occupancy.areas.area_lock import Area_Lock 
 
 
 #build group structure for occupancy items
@@ -20,20 +19,15 @@ supporting_groups = {
     'gOccupancyState' : 'gOccupancy', # occupancy state of area, ON = occupied, OFF = vacant, add OS_XXX to its corresponding area 
     'gOccupancyControl' : 'gOccupancy', #used to send commands to set the behavior of the area, add OC_XXX items to the area
     'gOccupancyLocking' : 'gOccupancy', # represents whether an area is locked or not
-    'gOccupancyLock' : 'gOccupancy' # area groups in this group lock other area groups
 }
  
  
 class Area_Manager:
 
-    __OCCUPANCY_LOCK_GROUP = "gOccupancyLock"
-
     def __init__(self):
         log.warn('Area Manager Starting')
 
         self.areas = {} # dictionary of all areas indexed by area name
-        self.area_locks = []
-        self.commands = {} # track commands per trigger
 
         self.setup_supporting_groups() # support group
         self.setup_areas()
@@ -46,34 +40,18 @@ class Area_Manager:
                 item = core.items.add_item (groupname,item_type="Group", groups=[parentgroup])
                 metadata.set_value(item.name,"Source","Occupancy") # set metadata to indicate we created this group
 
-    def add_area(self,area_item, is_lock):
-        area_class = Area_Lock if is_lock else Area
-        area = area_class(area_item,self.areas) 
-        self.areas [area_item.name] = area
-        if is_lock:
-            self.area_locks.append(area)
-        log.info ('Added {} {}'.format(area_class.__name__, area_item))
-        
-    def is_configured_as_lock(self,item):
-        # members of the occupancy lock group are considered locks
-        for groupName in item.getGroupNames():
-            if groupName == Area_Manager.__OCCUPANCY_LOCK_GROUP:
-                return True
-        return False
+    def add_area(self,area_item):
+        self.areas [area_item.name] = Area(area_item,self.areas) 
+        log.info ('Added Area {}'.format(area_item))
 
     def setup_areas(self):
         items = itemRegistry.getItems()
 
         for item in items:
             if metadata.get_value(item.name,"OccupancySettings") is not None: # add any group with the metadata key OccupancySettings
-                self.add_area(item, self.is_configured_as_lock(item))
+                self.add_area(item)
         log.info ('Found Areas: {}'.format(self.areas))
-        
-        # link locks to their areas
-        for area_lock in self.area_locks:
-            for parent in area_lock.get_parent_area_groups():
-                parent.set_lock(area_lock)
-                
+
     def get_group_area_item_for_item(self,item_name): # finds the area that an item belongs to
         item = itemRegistry.getItem(item_name)
 
@@ -98,14 +76,10 @@ class Area_Manager:
         return self.areas [area_item.name]
  
     def process_item_changed_event(self,event):
-        # We process trigger events only if we can't correlate them to a previous command
-        if not self.correlate_command(event.itemName, event.itemState):
-            area = self.get_area_for_item(event.itemName)
-            log.info ('Item Event {} Area {}.'.format(event,area))
-            if area:
-                area.process_item_changed_event (event)        
-        else:
-            log.debug("Swallowed trigger changed event {} for {}".format(event.itemState, event.itemName))
+        area = self.get_area_for_item(event.itemName)
+        log.info ('Item Event {} Area {}.'.format(event,area))
+        if area:
+            area.process_item_changed_event (event)
 
     def process_occupancy_state_changed_event(self,event):
         area = self.get_area_for_item(event.itemName)

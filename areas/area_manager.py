@@ -43,7 +43,7 @@ class Area_Manager:
 
     def add_area(self,area_item):
         self.areas [area_item.name] = Area(area_item,self.areas) 
-        log.info ('Added Area {}'.format(area_item))
+        log.info ('Added area {}'.format(area_item))
 
     def setup_areas(self):
         items = itemRegistry.getItems()
@@ -106,26 +106,5 @@ class Area_Manager:
         for area_name,area in self.areas.items():
             log.warn ('Area {} timer canceled {}.'.format(area_name,area))
             area.cancel_timer()
-            
-    # If an item triggers occupancy but also receives resulting actions then we must not interpret the resulting action as a new trigger event.
-    # A trigger event is identified by just an item state update without any item command. 
-    # A resulting action is identified by an item command and a subsequent item state update. 
-    # Unfortunately we have no means of deterministically correlating an item command and the resulting state update.
-    # The best we can do is to assume that an item command will be followed by a matching item state change before other commands or state changes are processed. 
-    # So if we receive a command we record the command for the trigger for future matching.
-    # If we receive a state update we check if this state change is the result of a previous command, i.e. if that command was recorded. 
-    # If it was recorded we swallow the state update. If it wasn't recorded we conclude the state update happened in isolation and process it. 
-    # We always clear the recorded state after a state update in case our assumptions didn't hold due to timing of events or binding behavior. 
-
-    # Record commands for a trigger for future matching
-    def record_command(self,trigger_item_name,state):
-        self.commands[trigger_item_name] = state;
-        
-    # Return true if we can correlate the provided state for a trigger with a previously recorded command, false otherwise
-    def correlate_command(self,trigger_item_name,state):
-        correlate = self.commands.get(trigger_item_name) == state;
-        self.commands[trigger_item_name] = None
-        return correlate
-
 
 #Area_Manager()

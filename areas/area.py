@@ -10,7 +10,9 @@ Handles events that occur from items located within an area to determine occupan
  
 
 '''
- 
+
+import threading 
+
 import core.items 
 from core.jsr223.scope import itemRegistry
 from core.jsr223.scope import events   
@@ -26,6 +28,8 @@ from org.joda.time import DateTime
 
 from core.log import logging, LOG_PREFIX
 log = logging.getLogger("{}.area".format(LOG_PREFIX))
+
+log.warn('Area Class Loaded')
 
 import personal.occupancy.areas.area_occupancy_event_metadata
 reload (personal.occupancy.areas.area_occupancy_event_metadata)
@@ -70,6 +74,7 @@ class Area:
         self.occupancy_timer = None # timer that is used to count down occupancy
         self.occupancy_timeout = None # if not None represents the time the timer will fire at
         self.seconds_left_when_locked = None # residual seconds on timer when room locked, used to restore timer after unlock
+        self.occupancy_timer_lock = threading.Lock()
 
         self.lock_timer = None # timer for temporary area locking, needs more work to check if existing lock timer exists and how to manage...
         self.locking_level = 0 # number of times an area has been locked, 0 = unlocked
@@ -128,29 +133,45 @@ class Area:
         return itemRegistry.getItem(str("OL_"+name [1:]))
 
     def start_timer(self, time_out_seconds):
-        time_started = DateTime.now()
 
-        def timeout_callback():
-            log.warn("Occupancy timer for area {} expired, timer was started at {}".format(self.name,time_started)) 
-            # If a timer is running with a lock on it was created from a lock override, 
-            # so we are requesting a lock override here in case a lock is still on
-            self.set_area_vacant('Timer Expired', True) 
-            self.occupancy_timer = None
-            self.occupancy_timeout = None        
+        self.occupancy_timer_lock.acquire()
+        try:
+            time_started = DateTime.now()
+            self.occupancy_timeout = time_started.plusSeconds(time_out_seconds)
 
-        self.cancel_timer()
+            if self.occupancy_timer is None:
+                def timeout_callback():
+                    log.warn("Occupancy timer callback for area {} expired, timer was started at {}".format(self.name,time_started)) 
+                    # If a timer is running with a lock on it was created from a lock override, 
+                    # so we are requesting a lock override here in case a lock is still on
+                    self.set_area_vacant('Timer Expired', True)
+                    self.occupancy_timeout = None        
 
-        self.occupancy_timer = ScriptExecution.createTimer(DateTime.now().plusSeconds(time_out_seconds), timeout_callback)
-        self.occupancy_timeout = DateTime.now().plusSeconds(time_out_seconds)
-        log.warn("Occupancy Timer for area {} expires at {}".format(self.name,self.occupancy_timeout))
+                self.occupancy_timer = ScriptExecution.createTimer(DateTime.now().plusSeconds(time_out_seconds), timeout_callback)
+                log.warn("Occupancy Timer started for area {} expires at {}".format(self.name,self.occupancy_timeout))
+            else:
+                if self.occupancy_timer.reschedule(DateTime.now().plusSeconds(time_out_seconds)):
+                    log.warn("Occupancy timer rescheduled for area {}, expires at {}".format(self.name,self.occupancy_timeout)) 
+                else:
+                    log.error("FAILED to reschedule Occupancy timer for area {}".format(self.name)) 
+
+        finally:
+            self.occupancy_timer_lock.release()
 
     def cancel_timer(self):
-        if self.occupancy_timer is not None:
-            log.info ("Occupancy timer for area {} cancelled".format(self.name))
-            old_timer = self.occupancy_timer 
-            self.occupancy_timer = None
-            old_timer.cancel()
-            self.occupancy_timeout = None
+        #log.warn ("Occupancy timer for area {} is {}".format(self.name,self.occupancy_timer))
+        self.occupancy_timer_lock.acquire()
+ 
+        try:
+            if self.occupancy_timer is not None:
+                log.warn ("Occupancy timer for area {} canceled".format(self.name))
+                self.occupancy_timer.cancel ()
+                self.occupancy_timeout = None
+            else:
+                log.warn ("No Occupancy timer to cancel".format(self.name))
+ 
+        finally:
+            self.occupancy_timer_lock.release()
 
     def get_occupancy_items(self): # gets all items that cause occupancy events
         event_items = []
@@ -227,7 +248,6 @@ class Area:
             self.unlock()
 
         self.lock_timer = ScriptExecution.createTimer(DateTime.now().plusSeconds(time_out_seconds), timeout_callback)
-        self.lock_timer = Timer(time_out_seconds, timeout_callback)
         log.warn("Occupancy LOCK timer for area {} started for {} seconds".format(self.name,time_out_seconds))
 
     def is_area_occupied (self):

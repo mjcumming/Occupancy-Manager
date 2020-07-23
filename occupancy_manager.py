@@ -107,8 +107,8 @@ def start():
     def gOccupancyStateReceivedCommand (event):
         log.warn ('Occupancy state received event {}'.format(event))
     
-        if event.oldItemState == NULL: # avoid events from persistance
-            return 
+        #if event.oldItemState == NULL: # avoid events from persistance
+        #    return 
         
         try:
             am.process_occupancy_state_received_command_event (event)

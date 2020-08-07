@@ -355,6 +355,8 @@ class Area:
                                             events.sendCommand (item,'ON')
                         else:
                             log.info ('Unknown action {} in area {}'.format(action,self.name))
+                    else:
+                        log.warn("Unknown occupancy state")
 
                 # OFF = vacant, do any vacant actions
                 elif state == 'OFF':

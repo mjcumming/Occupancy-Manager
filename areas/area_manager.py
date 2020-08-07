@@ -64,6 +64,18 @@ class Area_Manager:
                  
         return None
  
+    def get_group_areas_item_for_item(self,item_name): # finds the areas that an item belongs to
+        item = itemRegistry.getItem(item_name)
+
+        area_list = []
+        for group_name in item.getGroupNames (): # find the group occupancy area item for this item
+            if metadata.get_value(group_name,"OccupancySettings") is not None: 
+                area_item = itemRegistry.getItem(group_name)
+                log.info ('Item {} is in area {}'.format (item.name,area_item.name))
+                area_list.append (area_item)
+                 
+        return area_list
+        
     def get_area_for_item(self,item_name): # get an Area instance that correspsonds to the area for the item
         area_item = self.get_group_area_item_for_item(item_name) #get the area_item that this item belongs too
 
@@ -75,12 +87,28 @@ class Area_Manager:
             self.add_area(area_item)
         
         return self.areas [area_item.name]
- 
+
+    def get_areas_for_item(self,item_name): # get an Area instance(s) that correspsonds to the area for the item
+        area_items = self.get_group_areas_item_for_item(item_name) #get the area_items that this item belongs too
+
+        areas = []
+        for area_item in area_items:
+            if not self.areas.has_key(area_item.name): # create instance if needed
+                self.add_area(area_item)
+            areas.append(self.areas[area_item.name])
+
+        return areas
+
     def process_item_changed_event(self,event):
-        area = self.get_area_for_item(event.itemName)
-        log.info ('Area {} Item Event {}.'.format(area,event))
-        if area:
-            area.process_item_changed_event (event)
+        #area = self.get_area_for_item(event.itemName)
+        #log.info ('Area {} Item Event {}.'.format(area,event))
+        #if area:
+        #    area.process_item_changed_event (event)        
+        
+        area_list = self.get_areas_for_item(event.itemName)
+        log.warn ('Item Event {} in Areas {}.'.format(event,area_list))
+        for area in area_list:
+            area.process_item_changed_event (event)        
 
     def process_occupancy_state_changed_event(self,event):
         area = self.get_area_for_item(event.itemName)

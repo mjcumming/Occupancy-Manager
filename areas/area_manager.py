@@ -9,7 +9,6 @@ log = logging.getLogger("{}.area_manager".format(LOG_PREFIX))
 
 log.warn('Area Manager Loaded')
  
-# load the area Class  
 import personal.occupancy.areas.area  
 reload (personal.occupancy.areas.area) 
 from personal.occupancy.areas.area import Area 
@@ -26,10 +25,10 @@ supporting_groups = {
 
 class Area_Manager:
 
-    areas = {} # dictionary of all areas indexed by area name
-
     def __init__(self):
         log.warn('Area Manager Starting')
+
+        self.areas = {} # dictionary of all areas indexed by area name
 
         self.setup_supporting_groups() # support group
         self.setup_areas()
@@ -52,7 +51,6 @@ class Area_Manager:
         for item in items:
             if metadata.get_value(item.name,"OccupancySettings") is not None: # add any group with the metadata key OccupancySettings
                 self.add_area(item)
-
         log.info ('Found Areas: {}'.format(self.areas))
 
     def get_group_area_item_for_item(self,item_name): # finds the area that an item belongs to

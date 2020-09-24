@@ -57,9 +57,10 @@ class Event_Base():
         self.last_event = event   
 
     def begin_event(self, event):
-        if not self.area.is_locked(): # check if area locked before proceeding with standard events
-            event_settings = self.get_event_settings()
+        event_settings = self.get_event_settings()
+        override_lock = event_settings.override_lock()
 
+        if not self.area.is_locked() or override_lock: # check if area locked before proceeding with standard events
             if event_settings.only_if_vacant() and self.area.is_area_occupied(): # item will generate an occupancy event if the area is currently vacant
                 log.info('Ignoring item {} event as area is occuppied already and only if area vacant flag is present'.format(self.item_name))
                 return
@@ -72,7 +73,7 @@ class Event_Base():
 
             log.info('Using item {} event time {}'.format(self.item_name,override_occupancy_time))
 
-            self.area.set_area_occupied (self.item_name,override_occupancy_time)
+            self.area.set_area_occupied (self.item_name,override_occupancy_time, event_settings.override_lock())
             if event_settings.occupied_until_ended(): # lock the area until an end event comes from this item
                 self.area.lock()
 
@@ -81,15 +82,16 @@ class Event_Base():
 
     def end_event(self, event):
         event_settings = self.get_event_settings()
+        override_lock = event_settings.override_lock() 
 
-        if not self.area.is_locked(): # check if area locked before proceeding with standard events
+        if not self.area.is_locked() or override_lock: # check if area locked before proceeding with standard events
             override_occupancy_time = event_settings.get_end_occupied_time()
 
             if override_occupancy_time is not None: #override default time 
                 if override_occupancy_time > 0:
-                    self.area.set_area_occupied (self.item_name,override_occupancy_time)
+                    self.area.set_area_occupied (self.item_name,override_occupancy_time, override_lock)
                 else:
-                    self.area.set_area_vacant ("Item {} event ended with occupancy time of 0".format(self.item_name))
+                    self.area.set_area_vacant ("Item {} event ended with occupancy time of 0".format(self.item_name), override_lock)
             # otherwise, do nothing, as end events typically do not indicate a change in state unless a time is specified
         
         elif event_settings.occupied_until_ended ():

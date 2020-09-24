@@ -33,33 +33,23 @@ class Event_Metadata(Metadata_Item_Namespace):
 
     def only_if_vacant(self):
         self.read_raw()
-        if "OnlyIfAreaVacant" in self.get_behaviors():
-            return True
-        else:
-            return False
+        return "OnlyIfAreaVacant" in self.get_behaviors()
 
     def override_times_if_vacant(self):
         self.read_raw()
-        if "OverrideTimesIfAreaVacant" in self.get_behaviors():
-            return True
-        else:
-            return False
+        return "OverrideTimesIfAreaVacant" in self.get_behaviors()
             
     def occupied_until_ended(self):
         self.read_raw()
-        if "OccupiedUntilEnded" in self.get_behaviors():
-            return True
-        else:
-            return False
+        return "OccupiedUntilEnded" in self.get_behaviors()
+
+    def override_lock(self):
+        self.read_raw()
+        return "OverrideLock" in self.get_behaviors()
 
     def get_begin_occupied_time(self):
-        if self.get_value_for_configuration_key('BeginOccupiedTime') is None:
-            return None 
-        else:
-            return int(self.get_value_for_configuration_key('BeginOccupiedTime'))
+        return self.get_value_for_configuration_key('BeginOccupiedTime')
 
     def get_end_occupied_time(self):
-        if self.get_value_for_configuration_key('EndOccupiedTime') is None:
-            return None 
-        else:
-            return int(self.get_value_for_configuration_key('EndOccupiedTime'))
+        return self.get_value_for_configuration_key('EndOccupiedTime')
+
